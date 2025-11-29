@@ -1,9 +1,9 @@
 import streamlit as st
-import cv2
 import numpy as np
 from PIL import Image
 from inference_sdk import InferenceHTTPClient
 import os
+import tempfile
 
 # Page configuration
 st.set_page_config(
@@ -13,230 +13,245 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for modern glassmorphism design
+# Custom CSS for sleek, modern design
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
     
     * {
-        font-family: 'Inter', sans-serif;
-    }
-    
-    .main {
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
-        min-height: 100vh;
+        font-family: 'Poppins', sans-serif;
     }
     
     .stApp {
-        background: transparent;
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        background-attachment: fixed;
     }
     
-    /* Glassmorphism Header */
-    .glass-header {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 24px;
-        padding: 3rem 2rem;
-        margin-bottom: 3rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    /* Floating particles effect */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(circle at 20% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(126, 34, 206, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 20%, rgba(42, 82, 152, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
     }
     
-    .main-title {
-        font-size: 4rem;
+    .main > div {
+        padding-top: 3rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Hero Title */
+    .hero-section {
+        text-align: center;
+        margin-bottom: 4rem;
+        animation: fadeInDown 1s ease-out;
+    }
+    
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .hero-title {
+        font-size: 5rem;
         font-weight: 800;
         background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        text-align: center;
         margin: 0;
-        letter-spacing: -2px;
+        letter-spacing: -3px;
+        text-shadow: 0 0 80px rgba(255, 215, 0, 0.3);
     }
     
-    .subtitle {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1.4rem;
-        text-align: center;
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.3rem;
         margin-top: 1rem;
         font-weight: 300;
-        letter-spacing: 1px;
+        letter-spacing: 2px;
     }
     
-    /* Glass Card for Form */
-    .glass-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 24px;
-        padding: 2.5rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        position: relative;
-        overflow: hidden;
+    /* Main Form Container */
+    .form-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 0 2rem;
     }
     
-    .glass-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #ffd700, #7e22ce, #2a5298);
-    }
-    
-    /* Info Cards with Glass Effect */
-    .info-glass {
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        border: 1px solid rgba(255, 255, 255, 0.25);
-        border-radius: 20px;
-        padding: 2rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .info-glass:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-    }
-    
-    .info-title {
-        color: #ffd700;
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0 0 1rem 0;
-        letter-spacing: 0.5px;
-    }
-    
-    .info-text {
-        color: rgba(255, 255, 255, 0.95);
-        font-size: 1rem;
-        line-height: 1.6;
-        margin: 0;
-    }
-    
-    /* Service Items */
-    .service-item {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 12px;
-        padding: 1.2rem;
-        margin: 0.8rem 0;
-        color: white;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        border-left: 3px solid #ffd700;
-    }
-    
-    .service-item:hover {
-        background: rgba(255, 255, 255, 0.2);
-        transform: translateX(10px);
-        border-left: 3px solid #ffed4e;
-    }
-    
-    /* Form Labels */
-    .stTextInput label, .stNumberInput label, .stSelectbox label, .stFileUploader label {
-        color: #1e3c72 !important;
-        font-weight: 600 !important;
-        font-size: 1rem !important;
-    }
-    
-    /* Warning Box */
-    .warning-glass {
-        background: rgba(255, 193, 7, 0.15);
-        backdrop-filter: blur(10px);
-        border: 2px solid rgba(255, 193, 7, 0.5);
-        border-radius: 16px;
-        padding: 2rem;
-        margin: 2rem 0;
-        color: white;
-    }
-    
-    .warning-glass h4 {
-        color: #ffd700;
-        margin-top: 0;
-        font-size: 1.3rem;
-    }
-    
-    /* Footer */
-    .glass-footer {
-        background: rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(15px);
+    /* Sleek Form Card */
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 30px;
+        padding: 3rem;
+        box-shadow: 
+            0 20px 60px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Input Fields */
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > div,
+    .stFileUploader > div {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 15px !important;
+        color: white !important;
+        padding: 1rem !important;
+        font-size: 1rem !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stNumberInput > div > div > input:focus,
+    .stSelectbox > div > div > div:focus {
+        border: 1px solid rgba(255, 215, 0, 0.5) !important;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.2) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+    
+    /* Labels */
+    .stNumberInput label,
+    .stSelectbox label,
+    .stFileUploader label {
+        color: rgba(255, 255, 255, 0.9) !important;
+        font-weight: 500 !important;
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    /* File Uploader Styling */
+    .stFileUploader > div {
+        border: 2px dashed rgba(255, 215, 0, 0.3) !important;
+        border-radius: 20px !important;
+        background: rgba(255, 215, 0, 0.02) !important;
+        padding: 2rem !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stFileUploader > div:hover {
+        border-color: rgba(255, 215, 0, 0.6) !important;
+        background: rgba(255, 215, 0, 0.05) !important;
+        transform: scale(1.01);
+    }
+    
+    /* Uploaded Image */
+    [data-testid="stImage"] {
         border-radius: 20px;
-        padding: 2.5rem;
-        margin-top: 3rem;
-        text-align: center;
-        color: white;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        margin: 1.5rem 0;
     }
     
-    .footer-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 0 0 0.5rem 0;
-        color: #ffd700;
-    }
-    
-    .footer-link {
-        color: #ffd700;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 1.1rem;
-        transition: all 0.3s ease;
-    }
-    
-    .footer-link:hover {
-        color: #ffed4e;
-        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-    }
-    
-    /* Button Styling */
+    /* Submit Button */
     .stButton > button {
         background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-        color: #1e3c72;
+        color: #0f0c29;
         font-weight: 700;
         font-size: 1.2rem;
-        padding: 1rem 3rem;
-        border-radius: 12px;
+        padding: 1.2rem 3rem;
+        border-radius: 50px;
         border: none;
-        box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
-        transition: all 0.3s ease;
+        box-shadow: 
+            0 10px 30px rgba(255, 215, 0, 0.4),
+            0 0 60px rgba(255, 215, 0, 0.2);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         width: 100%;
+        margin-top: 2rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
     }
     
     .stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 32px rgba(255, 215, 0, 0.6);
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 
+            0 15px 40px rgba(255, 215, 0, 0.6),
+            0 0 80px rgba(255, 215, 0, 0.3);
         background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
     }
     
-    /* Hide Streamlit Branding */
+    .stButton > button:active {
+        transform: translateY(-2px) scale(1.01);
+    }
+    
+    /* Success/Error Messages */
+    .stSuccess, .stError, .stWarning {
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(10px) !important;
+        border-radius: 15px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding: 1rem 1.5rem !important;
+        margin: 1.5rem 0 !important;
+    }
+    
+    /* JSON Results */
+    [data-testid="stJson"] {
+        background: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 215, 0, 0.2) !important;
+        border-radius: 20px !important;
+        padding: 1.5rem !important;
+        margin-top: 2rem !important;
+    }
+    
+    /* Spinner */
+    .stSpinner > div {
+        border-top-color: #ffd700 !important;
+    }
+    
+    /* Hide Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Section Title */
-    .section-title {
-        color: white;
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 2rem 0 1.5rem 0;
+    /* Disclaimer */
+    .disclaimer {
+        max-width: 800px;
+        margin: 4rem auto 2rem;
+        padding: 2rem;
+        background: rgba(255, 193, 7, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        border-radius: 20px;
         text-align: center;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.8;
     }
     
-    /* Card Title */
-    .card-title {
-        color: #1e3c72;
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 0 0 2rem 0;
-        text-align: center;
+    .disclaimer strong {
+        color: #ffd700;
+    }
+    
+    /* Selectbox dropdown */
+    [data-baseweb="select"] > div {
+        background: rgba(15, 12, 41, 0.95) !important;
+        border-color: rgba(255, 215, 0, 0.3) !important;
+    }
+    
+    [data-baseweb="select"] li {
+        background: transparent !important;
+        color: white !important;
+    }
+    
+    [data-baseweb="select"] li:hover {
+        background: rgba(255, 215, 0, 0.1) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -251,141 +266,81 @@ def get_client():
 
 CLIENT = get_client()
 
-# Header with glassmorphism
+# Hero Section
 st.markdown("""
-<div class="glass-header">
-    <h1 class="main-title">URBAN ROOF</h1>
-    <p class="subtitle">Advanced Wall Defect Detection System</p>
+<div class="hero-section">
+    <h1 class="hero-title">URBAN ROOF</h1>
+    <p class="hero-subtitle">WALL DEFECT DETECTION SYSTEM</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Two column layout
-col1, col2 = st.columns([1.3, 1])
+# Center the form
+st.markdown('<div class="form-wrapper">', unsafe_allow_html=True)
 
-with col1:
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<h2 class="card-title">Wall Inspection Form</h2>', unsafe_allow_html=True)
-    
-    # Form inputs
-    wall_age = st.number_input(
-        "Wall Age (Years)",
-        min_value=0,
-        max_value=100,
-        value=5,
-        help="Enter the approximate age of the wall"
-    )
-    
-    uploaded_image = st.file_uploader(
-        "Upload Wall Image",
-        type=['jpg', 'jpeg', 'png'],
-        help="Choose a clear image of the wall for analysis"
-    )
-    
-    if uploaded_image:
-        st.image(uploaded_image, caption="Uploaded Image", use_container_width=True)
-    
-    wall_wet = st.selectbox(
-        "Moisture or Dampness Present?",
-        ["No", "Yes"],
-        help="Select if you notice any moisture issues"
-    )
-    
-    water_fixing = st.selectbox(
-        "Previous Dampguard Application?",
-        ["No", "Yes"],
-        help="Has any waterproofing treatment been done previously?"
-    )
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    submit_button = st.button("Analyze Wall Condition")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Process submission
-    if submit_button and uploaded_image:
-        with st.spinner("Analyzing your wall image..."):
-            # Convert uploaded file to image
-            image = Image.open(uploaded_image)
-            image_np = np.array(image)
+# Form inputs
+wall_age = st.number_input(
+    "Wall Age (Years)",
+    min_value=0,
+    max_value=100,
+    value=5,
+    help="Enter the approximate age of the wall"
+)
+
+uploaded_image = st.file_uploader(
+    "Upload Wall Image",
+    type=['jpg', 'jpeg', 'png'],
+    help="Choose a clear image of the wall for analysis"
+)
+
+if uploaded_image:
+    st.image(uploaded_image, use_container_width=True)
+
+wall_wet = st.selectbox(
+    "Moisture or Dampness Present?",
+    ["No", "Yes"]
+)
+
+water_fixing = st.selectbox(
+    "Previous Dampguard Application?",
+    ["No", "Yes"]
+)
+
+submit_button = st.button("Analyze Wall Condition")
+
+# Process submission
+if submit_button and uploaded_image:
+    with st.spinner("Analyzing your wall image..."):
+        # Convert uploaded file to image
+        image = Image.open(uploaded_image)
+        
+        # Save temporarily for processing
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp_file:
+            image.save(tmp_file.name)
+            temp_path = tmp_file.name
+        
+        # Perform inference
+        try:
+            result = CLIENT.infer(temp_path, model_id="urabn-roof/1")
             
-            # Save temporarily for processing
-            temp_path = "temp_image.jpg"
-            cv2.imwrite(temp_path, cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR))
+            st.success("Analysis Complete")
+            st.markdown("### Detection Results")
+            st.json(result)
             
-            # Perform inference
-            try:
-                result = CLIENT.infer(temp_path, model_id="urabn-roof/1")
+            # Clean up
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
                 
-                st.success("Analysis Complete")
-                st.markdown("### Detection Results")
-                st.json(result)
-                
-                # Clean up
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
-                    
-            except Exception as e:
-                st.error(f"Error during analysis: {str(e)}")
-    elif submit_button:
-        st.warning("Please upload an image before analyzing")
+        except Exception as e:
+            st.error(f"Error during analysis: {str(e)}")
+elif submit_button:
+    st.warning("Please upload an image before analyzing")
 
-with col2:
-    # About Urban Roof
-    st.markdown("""
-    <div class="info-glass">
-        <h3 class="info-title">About Urban Roof</h3>
-        <p class="info-text">Specialists in comprehensive waterproofing solutions, home inspection services, interior and exterior painting, and repair and restoration services across major Indian cities.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Service areas
-    st.markdown("""
-    <div class="info-glass">
-        <h3 class="info-title">Service Locations</h3>
-        <p class="info-text">Pune  •  Bangalore  •  Hyderabad  •  Chennai  •  Mumbai</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Experience
-    st.markdown("""
-    <div class="info-glass">
-        <h3 class="info-title">7+ Years of Excellence</h3>
-        <p class="info-text">Trusted by thousands of homeowners across India for quality waterproofing and home improvement solutions</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Services offered
-    st.markdown('<h3 class="section-title">Our Services</h3>', unsafe_allow_html=True)
-    
-    services = [
-        "Comprehensive Roof Inspections",
-        "Interior and Exterior Painting",
-        "Leak Detection and Seepage Solutions",
-        "Precision Repairs and Restoration",
-        "Complete Roof Replacements",
-        "Interior Design and Furnishing",
-        "Waterproofing Solutions",
-        "Civil Works and Construction"
-    ]
-    
-    for service in services:
-        st.markdown(f'<div class="service-item">{service}</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-# Warning box
+# Disclaimer
 st.markdown("""
-<div class="warning-glass">
-    <h4>Important Disclaimer</h4>
-    <p><strong>The model predictions are generated by artificial intelligence and may not be 100% accurate.</strong></p>
-    <p>For a definitive assessment and professional recommendations, an in-person inspection by our qualified technicians is highly recommended.</p>
-</div>
-""", unsafe_allow_html=True)
-
-# Footer
-st.markdown("""
-<div class="glass-footer">
-    <h3 class="footer-title">URBAN ROOF</h3>
-    <p style="font-size: 1.1rem; margin: 1rem 0;">Your Trusted Waterproofing and Home Improvement Partner</p>
-    <p style="margin: 1rem 0;">Creating beautiful, durable, and low-maintenance living spaces</p>
-    <p><a href="https://urbanroof.in/" target="_blank" class="footer-link">Visit urbanroof.in</a></p>
+<div class="disclaimer">
+    <strong>Important Notice:</strong> The model predictions are generated by AI and may not be 100% accurate. 
+    For a definitive assessment, an in-person inspection by a qualified technician is recommended.
 </div>
 """, unsafe_allow_html=True)
