@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inference Result</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 50px auto;
+            max-width: 600px;
+            padding: 20px;
+            border: 3px solid #FFD700; /* Golden border */
+            text-align: center;
+        }
+
+        h1 {
+            color: #FFD700; /* Golden color */
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #333;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #FFD700; /* Golden color */
+            color: black;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        a:hover {
+            background-color: #DAA520; /* Darker golden color */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Inference Result</h1>
+        <p>{{ result }}</p>
+        <a href="{{ url_for('index') }}">Go back</a>
+    </div>
+</body>
+
+</html>

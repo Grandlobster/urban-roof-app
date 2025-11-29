@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html style="font-size: 16px;" lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="keywords" content="">
+    <meta name="description" content="">
+    <title>Wall Inspection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='nicepage.css') }}" media="screen">
+    <link rel="stylesheet" href="{{ url_for('static', filename='Home.css') }}" media="screen">
+    <script class="u-script" type="text/javascript" src="{{ url_for('static', filename='jquery.js') }}" defer=""></script>
+    <script class="u-script" type="text/javascript" src="{{ url_for('static', filename='nicepage.js') }}" defer=""></script>
+    <meta name="generator" content="Nicepage 5.12.7, nicepage.com">
+    <link id="u-theme-google-font" rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,500,500i,700,700i,900,900i|Open+Sans:300,300i,400,400i,500,500i,600,600i,700,700i,800,800i">
+    <script type="application/ld+json">
+        {
+            "@context": "http://schema.org",
+            "@type": "Organization",
+            "name": "",
+            "logo": "{{ url_for('static', filename='images/Handbook-landing-page-design-7.png.webp') }}"
+        }
+    </script>
+    <meta name="theme-color" content="#478ac9">
+    <meta property="og:title" content="Home">
+    <meta property="og:type" content="website">
+    <meta data-intl-tel-input-cdn-path="intlTelInput/">
+    <style>
+        body {
+            background-color: #f0f0f0;
+        }
+
+        .form-container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 50px auto;
+            max-width: 500px;
+            padding: 20px;
+            border: 3px solid #FFD700; /* Golden border */
+        }
+
+        .form-container h1 {
+            text-align: center;
+            color: #FFD700; /* Golden color */
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .form-container label {
+            color: #000;
+            font-weight: bold;
+            display: block;
+            margin: 15px 0 5px;
+        }
+
+        .form-container input[type="number"],
+        .form-container input[type="file"],
+        .form-container select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form-container input[type="submit"] {
+            background-color: #FFD700; /* Golden color */
+            border: none;
+            color: black;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 20px 0;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .form-container input[type="submit"]:hover {
+            background-color: #DAA520; /* Darker golden color */
+        }
+    </style>
+</head>
+
+<body class="u-body u-xl-mode" data-lang="en">
+    <header class="u-clearfix u-header u-header" id="sec-feac">
+        <div class="u-clearfix u-sheet u-sheet-1">
+            <a href="https://urbanroof.in/" class="u-image u-logo u-image-1" data-image-width="393" data-image-height="104">
+                <img src="https://urbanroof.in/wp-content/uploads/2025/04/Urbanroof-Logo.png" class="u-logo-image u-logo-image-1">
+            </a>
+            <p class="u-small-text u-text u-text-variant u-text-1">URBAN ROOF</p>
+        </div>
+    </header>
+
+    <section class="u-clearfix u-section-1" id="sec-fef2">
+        <div class="u-clearfix u-sheet u-sheet-1">
+            <div class="form-container">
+                <h1>Wall Defect Identifier</h1>
+                <form action="" method="post" enctype="multipart/form-data">
+                    <label for="wall_age">How old is the wall in years:</label>
+                    <input type="number" id="wall_age" name="wall_age" required>
+
+                    <label for="image">Choose an image:</label>
+                    <input type="file" id="image" name="image" accept="image/*" required>
+
+                    <label for="wall_wet">Is the wall having mositure or damp?</label>
+                    <select id="wall_wet" name="wall_wet" required>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+
+                    <label for="water_fixing">Was Dampgaurd applied before?</label>
+                    <select id="water_fixing" name="water_fixing" required>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+
+                    <input type="submit" value="Submit">
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer class="u-align-center u-clearfix u-footer u-grey-80 u-footer" id="sec-b54a">
+        <div class="u-clearfix u-sheet u-sheet-1"></div>
+    </footer>
+    <section class="u-backlink u-clearfix u-grey-80">
+        <a class="u-link" href="https://urbanroof.in/" target="_blank">
+            <span></span>
+        </a>
+        <p class="u-text">
+            <span>NOTE:</span>
+        </p>
+        <a class="u-link" href="https://urbanroof.in/" target="_blank">
+            <span>the model predictions are generated by AI and may not be 100% accurate. For a definitive assessment, an in-person inspection by a qualified technician is recommended.</span>
+        </a>.
+    </section>
+</body>
+
+</html>
